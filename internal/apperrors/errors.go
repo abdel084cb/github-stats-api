@@ -1,9 +1,12 @@
 package apperrors
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrUserNotFound        = errors.New("user not found")
 	ErrUpstreamUnavailable = errors.New("upstream unavailable")
 	ErrInvalidUsername     = errors.New("invalid username")
+	ErrCacheMiss           = errors.New("cache miss")
 )
