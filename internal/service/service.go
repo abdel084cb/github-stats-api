@@ -43,7 +43,31 @@ func isValidUsername(username string) bool {
 }
 
 func calculateStats(username string, repositories []githubclient.GitHubResponse) model.Stats {
-	return model.Stats{}
+	stats := model.Stats{
+		Username:   username,
+		TotalRepos: int64(len(repositories)),
+	}
+
+	languageCounts := make(map[string]int)
+	maxLanguageCount := 0
+
+	for _, repo := range repositories {
+		stats.TotalStars += repo.Stars
+
+		if repo.Language == nil {
+			continue
+		}
+
+		language := *repo.Language
+		languageCounts[language]++
+
+		if languageCounts[language] > maxLanguageCount {
+			maxLanguageCount = languageCounts[language]
+			stats.TopLanguage = &language
+		}
+	}
+
+	return stats
 }
 
 func (s *Service) GetStatsByUsername(ctx context.Context, username string) (model.Stats, error) {
