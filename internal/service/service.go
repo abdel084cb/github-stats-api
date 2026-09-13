@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"regexp"
+	"time"
 
 	"github.com/abdelbassat/github-stats-api/internal/apperrors"
 	"github.com/abdelbassat/github-stats-api/internal/githubclient"
@@ -44,6 +45,18 @@ func (s *Service) GetStatsByUsername(ctx context.Context, username string) (stat
 
 	if !isValidUsername(username) {
 		return model.Stats{}, apperrors.ErrInvalidUsername
+	}
+
+	result, err := s.repository.GetStatsByUsername(ctx, username)
+
+	if err != nil {
+		return model.Stats{}, err
+	}
+
+	cacheAge := time.Since(result.CachedAt)
+
+	if cacheAge < time.Hour {
+		return result, nil
 	}
 
 	return model.Stats{}, nil
