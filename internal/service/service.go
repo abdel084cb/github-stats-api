@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"time"
 
@@ -41,23 +42,38 @@ func isValidUsername(username string) bool {
 	return usernamePattern.MatchString(username)
 }
 
-func (s *Service) GetStatsByUsername(ctx context.Context, username string) (stats model.Stats, err error) {
+func calculateStats(username string, repositories []githubclient.GitHubResponse) model.Stats {
+	return model.Stats{}
+}
 
+func (s *Service) GetStatsByUsername(ctx context.Context, username string) (model.Stats, error) {
 	if !isValidUsername(username) {
 		return model.Stats{}, apperrors.ErrInvalidUsername
 	}
 
-	result, err := s.repository.GetStatsByUsername(ctx, username)
+	cachedStats, err := s.repository.GetStatsByUsername(ctx, username)
 
+	if err == nil {
+		cacheAge := time.Since(cachedStats.CachedAt)
+
+		if cacheAge >= 0 && cacheAge < time.Hour {
+			return cachedStats, nil
+		}
+	} else if !errors.Is(err, apperrors.ErrCacheMiss) {
+		return model.Stats{}, err
+	}
+
+	githubRepositories, err := s.githubClient.GetGitHubRepositories(ctx, username)
 	if err != nil {
 		return model.Stats{}, err
 	}
 
-	cacheAge := time.Since(result.CachedAt)
+	stats := calculateStats(username, githubRepositories)
+	stats.CachedAt = time.Now().UTC().Truncate(time.Second)
 
-	if cacheAge < time.Hour {
-		return result, nil
+	if err := s.repository.CacheStatsByUsername(ctx, stats); err != nil {
+		return model.Stats{}, err
 	}
 
-	return model.Stats{}, nil
+	return stats, nil
 }

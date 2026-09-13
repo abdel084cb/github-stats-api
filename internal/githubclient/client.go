@@ -17,10 +17,10 @@ func NewClient(httpClient *http.Client) *Client {
 	}
 }
 
-func (c *Client) GetRepositories(
+func (c *Client) GetGitHubRepositories(
 	ctx context.Context,
 	username string,
-) ([]GithubResponse, error) {
+) ([]GitHubResponse, error) {
 
-	return []GithubResponse{}, nil
+	return []GitHubResponse{}, nil
 }

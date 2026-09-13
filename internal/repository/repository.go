@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
+	"github.com/abdelbassat/github-stats-api/internal/apperrors"
 	"github.com/abdelbassat/github-stats-api/internal/model"
 )
 
@@ -55,6 +57,11 @@ func (r *Repository) GetStatsByUsername(ctx context.Context, username string) (m
 		&topLanguage,
 		&cachedAtText,
 	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Stats{}, apperrors.ErrCacheMiss
+	}
+
 	if err != nil {
 		return model.Stats{}, err
 	}
