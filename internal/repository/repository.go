@@ -71,3 +71,43 @@ func (r *Repository) GetStatsByUsername(ctx context.Context, username string) (m
 
 	return result, nil
 }
+
+func (r *Repository) CacheStatsByUsername(ctx context.Context, stats model.Stats) error {
+	const query = `
+		INSERT INTO stats (
+			username,
+			total_repos,
+			total_stars,
+			top_language,
+			cached_at
+		)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(username) DO UPDATE SET
+			total_repos = excluded.total_repos,
+			total_stars = excluded.total_stars,
+			top_language = excluded.top_language,
+			cached_at = excluded.cached_at;
+	`
+
+	cachedAtText := stats.CachedAt.UTC().Format(time.RFC3339)
+
+	var topLanguage any
+	if stats.TopLanguage != nil {
+		topLanguage = *stats.TopLanguage
+	}
+
+	_, err := r.db.ExecContext(
+		ctx,
+		query,
+		stats.Username,
+		stats.TotalRepos,
+		stats.TotalStars,
+		topLanguage,
+		cachedAtText,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
