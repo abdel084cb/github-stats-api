@@ -9,5 +9,6 @@ import (
 func NewRouter(handler *handler.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /stats/{username}", handler.GetStats)
+	mux.HandleFunc("GET /stats/{$}", handler.GetStats)
 	return mux
 }
